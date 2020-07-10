@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const cors = require('cors');
 const express = require('express');
 const app = express();
 const port = 3000;
@@ -9,25 +10,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(bodyParser.json());
 
-let db = require('./db');
-let selector = require('./helpers/selector');
+app.use(cors());
+app.options('*', cors());
 
-app.get('/', (req, res) => {
-    db.then((connection => {
-
-        let selectString = selector.build();
-
-        connection.query(`SELECT ${selectString} FROM ${process.env.MYSQL_RECORDS_TABLE} LIMIT 10`, (error, results, fields) => {
-            if (error) {
-                console.log(error);
-                return;
-            }
-
-            let records = selector.parse(results);
-
-            res.send(records);
-        });
-    }));
+app.use(function(err, req, res, next) {
+    res.status(500).end(err.message);
 });
+
+const routes = require('./routes');
+
+app.use('/records', routes);
+
 
 app.listen(port, () => console.log('Up!'));
